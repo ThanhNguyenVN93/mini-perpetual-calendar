@@ -4,7 +4,7 @@ A lightweight Windows desktop widget that displays the current Vietnamese solar 
 
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue)
 ![Framework](https://img.shields.io/badge/.NET-4.5.2%20WinForms-blueviolet)
-![Version](https://img.shields.io/badge/version-1.0.5-green)
+![Version](https://img.shields.io/badge/version-1.0.6-green)
 ![Language](https://img.shields.io/badge/language-Vi%20%2F%20En-orange)
 
 ---

@@ -49,7 +49,7 @@ namespace frm_vietnamese_calendar
         private static readonly Color FeedbackHoverColor = Color.FromArgb(255, 210, 130);
         private static readonly Color TextOutlineColor   = Color.FromArgb(210, 0, 0, 0);
 
-        private const string FeedbackUrl              = "https://www.facebook.com/PycCodeTools";
+        private const string FeedbackUrl              = "https://github.com/ThanhNguyenVN93/mini-perpetual-calendar/issues";
         private const string StartupRegistryKeyPath   = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
         private const string StartupRegistryValueName = "frm_vietnamese_calendar";
 

@@ -655,26 +655,65 @@ namespace frm_vietnamese_calendar
 
         private static bool IsStartupWithWindowsEnabled()
         {
+            // Check registry first
             try
             {
                 using (var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKeyPath, false))
                 {
                     string val = key?.GetValue(StartupRegistryValueName) as string;
-                    return !string.IsNullOrEmpty(val)
-                        && string.Equals(val.Trim('"'), Application.ExecutablePath, StringComparison.OrdinalIgnoreCase);
+                    if (!string.IsNullOrEmpty(val) &&
+                        string.Equals(val.Trim('"'), Application.ExecutablePath, StringComparison.OrdinalIgnoreCase))
+                        return true;
                 }
             }
-            catch { return false; }
+            catch { }
+
+            // Fallback: check Startup folder shortcut
+            return System.IO.File.Exists(GetStartupShortcutPath());
         }
 
         private static void SetStartupWithWindowsEnabled(bool enabled)
         {
-            using (var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKeyPath, true))
+            // Primary: registry
+            bool registryOk = false;
+            try
             {
-                if (key == null) return;
-                if (enabled) key.SetValue(StartupRegistryValueName, "\"" + Application.ExecutablePath + "\"");
-                else         key.DeleteValue(StartupRegistryValueName, false);
+                using (var key = Registry.CurrentUser.OpenSubKey(StartupRegistryKeyPath, true))
+                {
+                    if (key != null)
+                    {
+                        if (enabled) key.SetValue(StartupRegistryValueName, "\"" + Application.ExecutablePath + "\"");
+                        else         key.DeleteValue(StartupRegistryValueName, false);
+                        registryOk = true;
+                    }
+                }
             }
+            catch { }
+
+            // Fallback: Startup folder shortcut
+            string lnk = GetStartupShortcutPath();
+            if (enabled && !registryOk)
+                CreateStartupShortcut(lnk);
+            else
+                try { if (System.IO.File.Exists(lnk)) System.IO.File.Delete(lnk); } catch { }
+        }
+
+        private static string GetStartupShortcutPath()
+        {
+            return System.IO.Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Startup),
+                "MiniPerpetualCalendar.lnk");
+        }
+
+        private static void CreateStartupShortcut(string path)
+        {
+            // Use WScript.Shell via late binding — no COM reference needed
+            dynamic wsh = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell"));
+            dynamic sc  = wsh.CreateShortcut(path);
+            sc.TargetPath       = Application.ExecutablePath;
+            sc.WorkingDirectory = System.IO.Path.GetDirectoryName(Application.ExecutablePath);
+            sc.Description      = "MiniPerpetualCalendar";
+            sc.Save();
         }
 
         // ---- Calendar display ----

@@ -10,7 +10,7 @@ namespace frm_vietnamese_calendar
     {
         private const string ApiUrl          = "https://api.github.com/repos/ThanhNguyenVN93/mini-perpetual-calendar/releases/latest";
         private const string ReleasePageBase = "https://github.com/ThanhNguyenVN93/mini-perpetual-calendar/releases/tag/";
-        public  const string CurrentVersion  = "1.0.3";
+        public  const string CurrentVersion  = "1.0.4";
 
         /// <summary>
         /// Checks the GitHub Releases API on a background thread.

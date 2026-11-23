@@ -616,6 +616,8 @@ namespace frm_vietnamese_calendar
             WindowState = FormWindowState.Normal;
             BringToFront();
             Activate();
+            // BringToFront() calls SetWindowPos(HWND_TOP) which strips the topmost flag — re-assert it
+            TopMost = AppConfig.Current.IsAlwaysOnTop;
         }
 
         // ---- Start with Windows ----

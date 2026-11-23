@@ -79,6 +79,10 @@ namespace frm_vietnamese_calendar
         private bool _startupSyncGuard;
         private bool _hiddenByFullscreen;
 
+        // Auto-update (F-27)
+        private string _updateUrl;
+        private DateTime _lastUpdateCheckDate = DateTime.MinValue;
+
         // Dynamic tray icon (F-12)
         private IntPtr _dynamicTrayIconHandle = IntPtr.Zero;
         private Icon   _originalTrayIcon;
@@ -150,8 +154,13 @@ namespace frm_vietnamese_calendar
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             _originalTrayIcon = Icon ?? SystemIcons.Application;
             notifyIconMain.Icon        = _originalTrayIcon;
-            notifyIconMain.DoubleClick += NotifyIconMain_DoubleClick;
-            notifyIconMain.MouseClick  += NotifyIconMain_MouseClick;
+            notifyIconMain.DoubleClick      += NotifyIconMain_DoubleClick;
+            notifyIconMain.MouseClick       += NotifyIconMain_MouseClick;
+            notifyIconMain.BalloonTipClicked += (s, e) =>
+            {
+                if (!string.IsNullOrEmpty(_updateUrl))
+                    try { System.Diagnostics.Process.Start(_updateUrl); } catch { }
+            };
 
             // ---- Build context menu ----
             _menuShowHideFont = new Font(SystemFonts.MenuFont ?? SystemFonts.DefaultFont, FontStyle.Bold);
@@ -367,6 +376,9 @@ namespace frm_vietnamese_calendar
             });
             t.IsBackground = true;
             t.Start();
+
+            // F-27: check for update shortly after startup
+            CheckForUpdate();
         }
 
         // ---- V11-03: Localization ----
@@ -758,12 +770,34 @@ namespace frm_vietnamese_calendar
             catch { }
         }
 
+        // ---- Auto-update (F-27) ----
+
+        private void CheckForUpdate()
+        {
+            _lastUpdateCheckDate = DateTime.Now.Date;
+            UpdateChecker.CheckAsync(this, (tag, url) =>
+            {
+                _updateUrl = url;
+                if (notifyIconMain != null && notifyIconMain.Visible)
+                    notifyIconMain.ShowBalloonTip(8000,
+                        AppStrings.IsVietnamese ? "Có phiên bản mới!" : "Update available!",
+                        (AppStrings.IsVietnamese
+                            ? "MiniPerpetualCalendar " + tag + " — Bấm vào đây để tải xuống."
+                            : "MiniPerpetualCalendar " + tag + " is available. Click to download."),
+                        System.Windows.Forms.ToolTipIcon.Info);
+            });
+        }
+
         // ---- Timers ----
 
         private void timerRefresh_Tick(object sender, EventArgs e)
         {
             if (DateTime.Now.Date != _lastDisplayedDate)
                 UpdateCalendarDisplay();
+
+            // F-27: check for update once per day
+            if (DateTime.Now.Date != _lastUpdateCheckDate)
+                CheckForUpdate();
 
             // F-26: auto-hide when a fullscreen app is active
             if (AppConfig.Current.FullscreenHide)

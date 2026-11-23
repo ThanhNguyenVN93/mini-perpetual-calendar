@@ -10,13 +10,10 @@ namespace frm_vietnamese_calendar
     {
         private const string ApiUrl          = "https://api.github.com/repos/ThanhNguyenVN93/mini-perpetual-calendar/releases/latest";
         private const string ReleasePageBase = "https://github.com/ThanhNguyenVN93/mini-perpetual-calendar/releases/tag/";
-        private const string CurrentVersion  = "1.0.1";
+        private const string CurrentVersion  = "1.0.2";
 
-        /// <summary>
-        /// Checks the GitHub Releases API on a background thread.
-        /// Calls <paramref name="onNewVersion"/> on the UI thread when a newer release exists.
-        /// </summary>
-        public static void CheckAsync(System.Windows.Forms.Control uiControl, Action<string, string> onNewVersion)
+        public static void CheckAsync(System.Windows.Forms.Control uiControl, Action<string, string> onNewVersion,
+                                      Action onUpToDate = null)
         {
             ThreadPool.QueueUserWorkItem(_ =>
             {
@@ -39,9 +36,15 @@ namespace frm_vietnamese_calendar
                             if (uiControl.IsHandleCreated && !uiControl.IsDisposed)
                                 uiControl.BeginInvoke(onNewVersion, tag, url);
                         }
+                        else if (onUpToDate != null && uiControl.IsHandleCreated && !uiControl.IsDisposed)
+                            uiControl.BeginInvoke(onUpToDate);
                     }
                 }
-                catch { }
+                catch
+                {
+                    if (onUpToDate != null && uiControl.IsHandleCreated && !uiControl.IsDisposed)
+                        uiControl.BeginInvoke(onUpToDate);
+                }
             });
         }
 

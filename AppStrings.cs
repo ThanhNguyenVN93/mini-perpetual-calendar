@@ -201,11 +201,22 @@ namespace frm_vietnamese_calendar
         public static string MenuExportIcs     { get { return IsVietnamese ? "Xuất .ics..." : "Export .ics..."; } }
         public static string MenuStartWindows  { get { return IsVietnamese ? "Khởi động cùng Windows" : "Start with Windows"; } }
         public static string MenuHotkeys       { get { return IsVietnamese ? "Đổi phím tắt..." : "Change hotkeys..."; } }
+        public static string MenuCheckUpdate   { get { return IsVietnamese ? "Kiểm tra cập nhật..." : "Check for updates..."; } }
+        public static string MenuAbout        { get { return IsVietnamese ? "Giới thiệu" : "About"; } }
         public static string MenuFeedback      { get { return IsVietnamese ? "Phản hồi" : "Feedback"; } }
         public static string MenuLanguage      { get { return IsVietnamese ? "English" : "Tiếng Việt"; } }
         public static string MenuFullscreenHide { get { return IsVietnamese ? "Ẩn khi toàn màn hình" : "Hide when fullscreen"; } }
         public static string MenuWeekNumbers   { get { return IsVietnamese ? "Hiện số tuần" : "Show week numbers"; } }
         public static string MenuExit          { get { return IsVietnamese ? "Thoát" : "Exit"; } }
+
+        // ---- About / Update ----
+        public static string AboutTitle       { get { return IsVietnamese ? "Giới thiệu" : "About"; } }
+        public static string AboutBody        { get { return IsVietnamese
+            ? "MiniPerpetualCalendar v1.0.2\n\nLịch Âm – Dương trên desktop Windows.\nThuật toán lịch âm: Hồ Ngọc Đức\n\nhttps://github.com/ThanhNguyenVN93/mini-perpetual-calendar"
+            : "MiniPerpetualCalendar v1.0.2\n\nVietnamese lunar/solar calendar widget for Windows.\nLunar algorithm by Ho Ngoc Duc\n\nhttps://github.com/ThanhNguyenVN93/mini-perpetual-calendar"; } }
+        public static string UpdateChecking   { get { return IsVietnamese ? "Đang kiểm tra..." : "Checking..."; } }
+        public static string UpdateUpToDate   { get { return IsVietnamese ? "Bạn đang dùng phiên bản mới nhất." : "You're on the latest version."; } }
+        public static string UpdateAvailable  { get { return IsVietnamese ? "Có phiên bản mới! Bấm OK để mở trang tải xuống." : "A new version is available! Click OK to open the download page."; } }
 
         // ---- Hotkey balloon ----
         public static string HotkeyConflictTitle { get { return IsVietnamese ? "Xung đột phím tắt" : "Hotkey conflict"; } }

@@ -19,7 +19,7 @@ namespace frm_vietnamese_calendar
 
             sb.AppendLine("BEGIN:VCALENDAR");
             sb.AppendLine("VERSION:2.0");
-            sb.AppendLine("PRODID:-//MiniPerpetualCalendar//v1.0.1//EN");
+            sb.AppendLine("PRODID:-//MiniPerpetualCalendar//v1.0.2//EN");
             sb.AppendLine("CALSCALE:GREGORIAN");
             sb.AppendLine("METHOD:PUBLISH");
 

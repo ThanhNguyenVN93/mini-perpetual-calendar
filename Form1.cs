@@ -107,6 +107,8 @@ namespace frm_vietnamese_calendar
         private ToolStripMenuItem _menuExportIcs;
         private ToolStripMenuItem _menuLanguage;
         private ToolStripMenuItem _menuWeekNumbers;
+        private ToolStripMenuItem _menuCheckUpdate;
+        private ToolStripMenuItem _menuAbout;
 
         private Font _menuShowHideFont;
         private readonly Font _countdownFont = new Font("Segoe UI", 8F, FontStyle.Regular);
@@ -293,6 +295,13 @@ namespace frm_vietnamese_calendar
             Ins(_menuLanguage);
             Ins(_menuWeekNumbers);
             Ins(new ToolStripSeparator());
+            _menuCheckUpdate = new ToolStripMenuItem();
+            _menuCheckUpdate.Click += (s, e) => ManualCheckForUpdate();
+            Ins(_menuCheckUpdate);
+            _menuAbout = new ToolStripMenuItem();
+            _menuAbout.Click += (s, e) => ShowAbout();
+            Ins(_menuAbout);
+            Ins(new ToolStripSeparator());
 
             // L-14: block tray context menu when a modal dialog is open (bring existing dialog to front instead)
             contextMenuMain.Opening += (s, e) =>
@@ -411,6 +420,8 @@ namespace frm_vietnamese_calendar
             _menuWeekNumbers.Text         = AppStrings.MenuWeekNumbers;
             menuItemStartWithWindows.Text = AppStrings.MenuStartWindows;
             menuItemChangeHotkeys.Text    = AppStrings.MenuHotkeys;
+            _menuCheckUpdate.Text         = AppStrings.MenuCheckUpdate;
+            _menuAbout.Text               = AppStrings.MenuAbout;
             menuItemFeedback.Text         = AppStrings.MenuFeedback;
             menuItemExit.Text             = AppStrings.MenuExit;
 
@@ -1183,6 +1194,30 @@ namespace frm_vietnamese_calendar
         private void menuItemMonthView_Click(object sender, EventArgs e)  { OpenMonthCalendar(); }
         private void menuItemFeedback_Click(object sender, EventArgs e)   { OpenFeedbackLink(); }
         private void menuItemExit_Click(object sender, EventArgs e)       { _isExiting = true; Close(); }
+
+        private void ShowAbout()
+        {
+            MessageBox.Show(AppStrings.AboutBody, AppStrings.AboutTitle,
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private void ManualCheckForUpdate()
+        {
+            _menuCheckUpdate.Enabled = false;
+            UpdateChecker.CheckAsync(this, (tag, url) =>
+            {
+                _menuCheckUpdate.Enabled = true;
+                if (MessageBox.Show(AppStrings.UpdateAvailable, tag,
+                        MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK)
+                    try { System.Diagnostics.Process.Start(url); } catch { }
+            },
+            () =>
+            {
+                _menuCheckUpdate.Enabled = true;
+                MessageBox.Show(AppStrings.UpdateUpToDate, AppStrings.MenuCheckUpdate,
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            });
+        }
 
         private void OpenFeedbackLink()
         {

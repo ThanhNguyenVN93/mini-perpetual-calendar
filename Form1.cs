@@ -594,10 +594,10 @@ namespace frm_vietnamese_calendar
 
         private void NotifyIconMain_MouseClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left) RestoreFromTray();
+            if (e.Button == MouseButtons.Left) ToggleFormVisibility();
         }
 
-        private void NotifyIconMain_DoubleClick(object sender, EventArgs e) { RestoreFromTray(); }
+        private void NotifyIconMain_DoubleClick(object sender, EventArgs e) { ToggleFormVisibility(); }
 
         private void RestoreFromTray()
         {

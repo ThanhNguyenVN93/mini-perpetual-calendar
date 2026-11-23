@@ -87,6 +87,7 @@
     <Compile Include="RemindersForm.Designer.cs">
       <DependentUpon>RemindersForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="AutoUpdater.cs" />
     <Compile Include="UpdateChecker.cs" />
     <Compile Include="VietnameseHolidays.cs" />
     <Compile Include="Program.cs" />

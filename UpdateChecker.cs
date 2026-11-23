@@ -10,9 +10,15 @@ namespace frm_vietnamese_calendar
     {
         private const string ApiUrl          = "https://api.github.com/repos/ThanhNguyenVN93/mini-perpetual-calendar/releases/latest";
         private const string ReleasePageBase = "https://github.com/ThanhNguyenVN93/mini-perpetual-calendar/releases/tag/";
-        private const string CurrentVersion  = "1.0.2";
+        public  const string CurrentVersion  = "1.0.3";
 
-        public static void CheckAsync(System.Windows.Forms.Control uiControl, Action<string, string> onNewVersion,
+        /// <summary>
+        /// Checks the GitHub Releases API on a background thread.
+        /// onNewVersion(tag, pageUrl, downloadUrl) is called on the UI thread when a newer release exists.
+        /// onUpToDate (optional) is called on the UI thread when already on the latest version.
+        /// </summary>
+        public static void CheckAsync(System.Windows.Forms.Control uiControl,
+                                      Action<string, string, string> onNewVersion,
                                       Action onUpToDate = null)
         {
             ThreadPool.QueueUserWorkItem(_ =>
@@ -29,12 +35,13 @@ namespace frm_vietnamese_calendar
                     using (var reader = new StreamReader(stream))
                     {
                         string json = reader.ReadToEnd();
-                        string tag  = ParseTagName(json);
+                        string tag  = ParseField(json, "tag_name");
                         if (tag != null && IsNewer(tag))
                         {
-                            string url = ReleasePageBase + tag;
+                            string pageUrl     = ReleasePageBase + tag;
+                            string downloadUrl = ParseField(json, "browser_download_url") ?? pageUrl;
                             if (uiControl.IsHandleCreated && !uiControl.IsDisposed)
-                                uiControl.BeginInvoke(onNewVersion, tag, url);
+                                uiControl.BeginInvoke(onNewVersion, tag, pageUrl, downloadUrl);
                         }
                         else if (onUpToDate != null && uiControl.IsHandleCreated && !uiControl.IsDisposed)
                             uiControl.BeginInvoke(onUpToDate);
@@ -48,13 +55,13 @@ namespace frm_vietnamese_calendar
             });
         }
 
-        private static string ParseTagName(string json)
+        private static string ParseField(string json, string field)
         {
-            var m = Regex.Match(json, "\"tag_name\"\\s*:\\s*\"([^\"]+)\"");
+            var m = Regex.Match(json, "\"" + field + "\"\\s*:\\s*\"([^\"]+)\"");
             return m.Success ? m.Groups[1].Value : null;
         }
 
-        private static bool IsNewer(string tag)
+        public static bool IsNewer(string tag)
         {
             string s = tag.TrimStart('v', 'V');
             Version remote, current;

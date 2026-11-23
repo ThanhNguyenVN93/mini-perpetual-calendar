@@ -212,11 +212,15 @@ namespace frm_vietnamese_calendar
         // ---- About / Update ----
         public static string AboutTitle       { get { return IsVietnamese ? "Giới thiệu" : "About"; } }
         public static string AboutBody        { get { return IsVietnamese
-            ? "MiniPerpetualCalendar v1.0.2\n\nLịch Âm – Dương trên desktop Windows.\nThuật toán lịch âm: Hồ Ngọc Đức\n\nhttps://github.com/ThanhNguyenVN93/mini-perpetual-calendar"
-            : "MiniPerpetualCalendar v1.0.2\n\nVietnamese lunar/solar calendar widget for Windows.\nLunar algorithm by Ho Ngoc Duc\n\nhttps://github.com/ThanhNguyenVN93/mini-perpetual-calendar"; } }
-        public static string UpdateChecking   { get { return IsVietnamese ? "Đang kiểm tra..." : "Checking..."; } }
-        public static string UpdateUpToDate   { get { return IsVietnamese ? "Bạn đang dùng phiên bản mới nhất." : "You're on the latest version."; } }
-        public static string UpdateAvailable  { get { return IsVietnamese ? "Có phiên bản mới! Bấm OK để mở trang tải xuống." : "A new version is available! Click OK to open the download page."; } }
+            ? "MiniPerpetualCalendar v" + UpdateChecker.CurrentVersion + "\n\nLịch Âm – Dương trên desktop Windows.\nThuật toán lịch âm: Hồ Ngọc Đức\n\nhttps://github.com/ThanhNguyenVN93/mini-perpetual-calendar"
+            : "MiniPerpetualCalendar v" + UpdateChecker.CurrentVersion + "\n\nVietnamese lunar/solar calendar widget for Windows.\nLunar algorithm by Ho Ngoc Duc\n\nhttps://github.com/ThanhNguyenVN93/mini-perpetual-calendar"; } }
+        public static string UpdateChecking      { get { return IsVietnamese ? "Đang kiểm tra..." : "Checking..."; } }
+        public static string UpdateUpToDate      { get { return IsVietnamese ? "Bạn đang dùng phiên bản mới nhất." : "You're on the latest version."; } }
+        public static string UpdateAvailableAuto { get { return IsVietnamese ? "Có phiên bản mới! Bấm vào đây để tải xuống." : "New version available! Click to download."; } }
+        public static string UpdateNowPrompt     { get { return IsVietnamese
+            ? "Có phiên bản mới!\n\nBấm 'Yes' để tự động cập nhật và khởi động lại.\nBấm 'No' để mở trang tải xuống."
+            : "A new version is available!\n\nClick 'Yes' to update automatically and restart.\nClick 'No' to open the download page."; } }
+        public static string UpdateDownloading   { get { return IsVietnamese ? "Đang tải xuống bản cập nhật, vui lòng đợi..." : "Downloading update, please wait..."; } }
 
         // ---- Hotkey balloon ----
         public static string HotkeyConflictTitle { get { return IsVietnamese ? "Xung đột phím tắt" : "Hotkey conflict"; } }

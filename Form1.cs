@@ -161,7 +161,7 @@ namespace frm_vietnamese_calendar
             notifyIconMain.BalloonTipClicked += (s, e) =>
             {
                 if (!string.IsNullOrEmpty(_updateUrl))
-                    try { System.Diagnostics.Process.Start(_updateUrl); } catch { }
+                    AutoUpdater.DownloadAndInstall(this, _updateUrl);
             };
 
             // ---- Build context menu ----
@@ -786,15 +786,13 @@ namespace frm_vietnamese_calendar
         private void CheckForUpdate()
         {
             _lastUpdateCheckDate = DateTime.Now.Date;
-            UpdateChecker.CheckAsync(this, (tag, url) =>
+            UpdateChecker.CheckAsync(this, (tag, pageUrl, downloadUrl) =>
             {
-                _updateUrl = url;
+                _updateUrl = downloadUrl;
                 if (notifyIconMain != null && notifyIconMain.Visible)
                     notifyIconMain.ShowBalloonTip(8000,
                         AppStrings.IsVietnamese ? "Có phiên bản mới!" : "Update available!",
-                        (AppStrings.IsVietnamese
-                            ? "MiniPerpetualCalendar " + tag + " — Bấm vào đây để tải xuống."
-                            : "MiniPerpetualCalendar " + tag + " is available. Click to download."),
+                        "MiniPerpetualCalendar " + tag + " — " + AppStrings.UpdateAvailableAuto,
                         System.Windows.Forms.ToolTipIcon.Info);
             });
         }
@@ -1204,12 +1202,23 @@ namespace frm_vietnamese_calendar
         private void ManualCheckForUpdate()
         {
             _menuCheckUpdate.Enabled = false;
-            UpdateChecker.CheckAsync(this, (tag, url) =>
+            UpdateChecker.CheckAsync(this, (tag, pageUrl, downloadUrl) =>
             {
                 _menuCheckUpdate.Enabled = true;
-                if (MessageBox.Show(AppStrings.UpdateAvailable, tag,
-                        MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK)
-                    try { System.Diagnostics.Process.Start(url); } catch { }
+                var result = MessageBox.Show(
+                    AppStrings.UpdateNowPrompt + "\n\n" + tag,
+                    AppStrings.IsVietnamese ? "Có phiên bản mới!" : "Update available",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+                if (result == DialogResult.Yes)
+                {
+                    notifyIconMain.ShowBalloonTip(5000,
+                        AppStrings.IsVietnamese ? "Đang cập nhật..." : "Updating...",
+                        AppStrings.UpdateDownloading,
+                        System.Windows.Forms.ToolTipIcon.Info);
+                    AutoUpdater.DownloadAndInstall(this, downloadUrl);
+                }
+                else
+                    try { System.Diagnostics.Process.Start(pageUrl); } catch { }
             },
             () =>
             {

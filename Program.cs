@@ -26,6 +26,19 @@ namespace frm_vietnamese_calendar
             {
                 if (!createdNew)
                 {
+                    // Wait briefly in case the previous instance is shutting down right after an in-place update
+                    try
+                    {
+                        createdNew = singleInstanceMutex.WaitOne(2500, false);
+                    }
+                    catch (AbandonedMutexException)
+                    {
+                        createdNew = true;
+                    }
+                }
+
+                if (!createdNew)
+                {
                     // F-14: signal the running instance to restore itself instead of showing a message box
                     try
                     {
@@ -35,6 +48,8 @@ namespace frm_vietnamese_calendar
                     catch { }
                     return;
                 }
+
+                AutoUpdater.CleanupOldExecutable();
 
                 // Create the named event so a future second instance can signal us
                 using (var wakeEvent = new EventWaitHandle(false, EventResetMode.AutoReset, WakeEventName))

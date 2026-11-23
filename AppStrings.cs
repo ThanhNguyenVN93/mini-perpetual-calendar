@@ -202,6 +202,7 @@ namespace frm_vietnamese_calendar
         public static string MenuStartWindows  { get { return IsVietnamese ? "Khởi động cùng Windows" : "Start with Windows"; } }
         public static string MenuHotkeys       { get { return IsVietnamese ? "Đổi phím tắt..." : "Change hotkeys..."; } }
         public static string MenuCheckUpdate   { get { return IsVietnamese ? "Kiểm tra cập nhật..." : "Check for updates..."; } }
+        public static string MenuDonate        { get { return IsVietnamese ? "Ủng hộ tác giả..." : "Donate..."; } }
         public static string MenuAbout        { get { return IsVietnamese ? "Giới thiệu" : "About"; } }
         public static string MenuFeedback      { get { return IsVietnamese ? "Phản hồi" : "Feedback"; } }
         public static string MenuLanguage      { get { return IsVietnamese ? "English" : "Tiếng Việt"; } }
@@ -302,19 +303,21 @@ namespace frm_vietnamese_calendar
             ? "Cảm ơn bạn đã sử dụng Mini Perpetual Calendar!"
             : "Thank you for using Mini Perpetual Calendar!"; } }
         public static string DonateMessage       { get { return IsVietnamese
-            ? "Ứng dụng này được phát triển miễn phí, phi lợi nhuận. Nếu bạn thấy hữu ích, bạn có thể mời tác giả một ly cà phê để có thêm động lực duy trì và cải thiện."
+            ? "Ứng dụng được phát triển miễn phí và phi lợi nhuận. Nếu thấy hữu ích, bạn có thể mời tác giả một ly cà phê để có thêm động lực duy trì và phát triển."
             : "This app is developed for free, non-profit. If you find it useful, you can buy me a coffee for extra motivation to keep maintaining and improving it."; } }
         public static string DonateEncourage     { get { return IsVietnamese
             ? "Mỗi sự ủng hộ đều rất có ý nghĩa!"
             : "Every bit of support means a lot!"; } }
         public static string DonateHint          { get { return IsVietnamese
-            ? "Nhấn 'Có' để xem mã QR quyên góp."
-            : "Click 'Yes' to see the donation QR codes."; } }
-        public static string DonateDontShow      { get { return IsVietnamese ? "Không hiện lại" : "Don't show this again"; } }
-        public static string DonateYes           { get { return IsVietnamese ? "Có" : "Yes"; } }
-        public static string DonateNo            { get { return IsVietnamese ? "Không" : "No"; } }
+            ? "Nhấn 'Có, xem mã QR' hoặc mở trang Donate trực tuyến."
+            : "Click 'Yes, show QR' or open the online donation page."; } }
+        public static string DonateDontShow      { get { return IsVietnamese ? "Không hiện lại khi thoát" : "Don't show again on exit"; } }
+        public static string DonateYes           { get { return IsVietnamese ? "☕  Có, xem mã QR" : "☕  Yes, show QR"; } }
+        public static string DonateNo            { get { return IsVietnamese ? "Để lúc khác" : "Maybe later"; } }
+        public static string DonateClose         { get { return IsVietnamese ? "Đóng" : "Close"; } }
+        public static string DonateWebLink       { get { return IsVietnamese ? "🌐  nguyenthanhdev.com/donate" : "🌐  nguyenthanhdev.com/donate"; } }
         public static string DonateThanks        { get { return IsVietnamese
-            ? "Cảm ơn rất nhiều! Đóng cửa sổ này để tiếp tục."
-            : "Thank you so much! Close this window to continue."; } }
+            ? "Cảm ơn bạn rất nhiều! Quét mã QR bên trên hoặc bấm vào link trang web."
+            : "Thank you so much! Scan a QR code above or click the website link."; } }
     }
 }

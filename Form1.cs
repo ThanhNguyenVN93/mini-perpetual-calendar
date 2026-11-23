@@ -82,6 +82,8 @@ namespace frm_vietnamese_calendar
         // Auto-update (F-27)
         private string _updateUrl;
         private DateTime _lastUpdateCheckDate = DateTime.MinValue;
+        private bool _updateCheckInProgress;
+        private WhatsNewForm _whatsNewForm;
 
         // Dynamic tray icon (F-12)
         private IntPtr _dynamicTrayIconHandle = IntPtr.Zero;
@@ -108,6 +110,7 @@ namespace frm_vietnamese_calendar
         private ToolStripMenuItem _menuLanguage;
         private ToolStripMenuItem _menuWeekNumbers;
         private ToolStripMenuItem _menuCheckUpdate;
+        private ToolStripMenuItem _menuDonate;
         private ToolStripMenuItem _menuAbout;
 
         private Font _menuShowHideFont;
@@ -294,6 +297,9 @@ namespace frm_vietnamese_calendar
             _menuCheckUpdate = new ToolStripMenuItem();
             _menuCheckUpdate.Click += (s, e) => ManualCheckForUpdate();
             Ins(_menuCheckUpdate);
+            _menuDonate = new ToolStripMenuItem();
+            _menuDonate.Click += (s, e) => OpenDonateDialog();
+            Ins(_menuDonate);
             _menuAbout = new ToolStripMenuItem();
             _menuAbout.Click += (s, e) => ShowAbout();
             Ins(_menuAbout);
@@ -381,9 +387,6 @@ namespace frm_vietnamese_calendar
             });
             t.IsBackground = true;
             t.Start();
-
-            // F-27: check for update shortly after startup
-            CheckForUpdate();
         }
 
         // ---- V11-03: Localization ----
@@ -417,6 +420,7 @@ namespace frm_vietnamese_calendar
             menuItemStartWithWindows.Text = AppStrings.MenuStartWindows;
             menuItemChangeHotkeys.Text    = AppStrings.MenuHotkeys;
             _menuCheckUpdate.Text         = AppStrings.MenuCheckUpdate;
+            _menuDonate.Text              = AppStrings.MenuDonate;
             _menuAbout.Text               = AppStrings.MenuAbout;
             menuItemFeedback.Text         = AppStrings.MenuFeedback;
             menuItemExit.Text             = AppStrings.MenuExit;
@@ -456,6 +460,13 @@ namespace frm_vietnamese_calendar
 
             if (AppConfig.Current.IsClickThrough)
                 ApplyClickThrough(true);
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            // F-27: check for update after form handle and message loop are ready
+            CheckForUpdate();
         }
 
         protected override void OnHandleDestroyed(EventArgs e)
@@ -822,24 +833,62 @@ namespace frm_vietnamese_calendar
 
         private void CheckForUpdate()
         {
-            _lastUpdateCheckDate = DateTime.Now.Date;
-            UpdateChecker.CheckAsync(this, (tag, pageUrl, downloadUrl, notes) =>
-            {
-                if (AppConfig.Current.SkippedUpdateVersion == tag) return;
-                _updateUrl = downloadUrl;
-                var dlg = new WhatsNewForm(tag, notes);
-                dlg.FormClosed += (s2, e2) =>
+            if (_updateCheckInProgress) return;
+            _updateCheckInProgress = true;
+
+            UpdateChecker.CheckAsync(this,
+                (tag, pageUrl, downloadUrl, notes) =>
                 {
-                    if (dlg.WillInstall)
-                        AutoUpdater.DownloadAndInstall(this, downloadUrl);
-                    else if (dlg.SkipVersion)
+                    _updateCheckInProgress = false;
+                    _lastUpdateCheckDate = DateTime.Now.Date;
+
+                    if (AppConfig.Current.SkippedUpdateVersion == tag) return;
+                    if (_whatsNewForm != null && !_whatsNewForm.IsDisposed)
                     {
-                        AppConfig.Current.SkippedUpdateVersion = tag;
-                        AppConfig.Current.Save();
+                        _whatsNewForm.BringToFront();
+                        _whatsNewForm.Activate();
+                        return;
                     }
-                };
-                dlg.Show(this);
-            });
+
+                    _updateUrl = downloadUrl ?? pageUrl;
+                    _whatsNewForm = new WhatsNewForm(tag, notes);
+                    _whatsNewForm.FormClosed += (s2, e2) =>
+                    {
+                        bool willInstall = _whatsNewForm.WillInstall;
+                        bool skipVersion = _whatsNewForm.SkipVersion;
+                        _whatsNewForm.Dispose();
+                        _whatsNewForm = null;
+
+                        if (willInstall)
+                        {
+                            if (notifyIconMain != null && notifyIconMain.Visible)
+                                notifyIconMain.ShowBalloonTip(4000,
+                                    AppStrings.IsVietnamese ? "Đang cập nhật..." : "Updating...",
+                                    AppStrings.UpdateDownloading,
+                                    ToolTipIcon.Info);
+                            AutoUpdater.DownloadAndInstall(this, downloadUrl, pageUrl);
+                        }
+                        else if (skipVersion)
+                        {
+                            AppConfig.Current.SkippedUpdateVersion = tag;
+                            AppConfig.Current.Save();
+                        }
+                    };
+                    if (Visible)
+                        _whatsNewForm.Show(this);
+                    else
+                        _whatsNewForm.Show();
+                },
+                onUpToDate: () =>
+                {
+                    _updateCheckInProgress = false;
+                    _lastUpdateCheckDate = DateTime.Now.Date;
+                },
+                onError: _ =>
+                {
+                    // Do not set _lastUpdateCheckDate on transient network failure so timerRefresh can retry
+                    _updateCheckInProgress = false;
+                });
         }
 
         // ---- Timers ----
@@ -1244,32 +1293,73 @@ namespace frm_vietnamese_calendar
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
+        private void OpenDonateDialog()
+        {
+            using (var donateForm = new DonateForm(showDontShowCheckbox: false, startExpanded: false))
+            {
+                donateForm.ShowDialog(this);
+            }
+        }
+
         private void ManualCheckForUpdate()
         {
             _menuCheckUpdate.Enabled = false;
-            UpdateChecker.CheckAsync(this, (tag, pageUrl, downloadUrl, notes) =>
-            {
-                _menuCheckUpdate.Enabled = true;
-                // Reset skipped version so user can re-check manually
-                if (AppConfig.Current.SkippedUpdateVersion == tag)
-                    AppConfig.Current.SkippedUpdateVersion = string.Empty;
-                _updateUrl = downloadUrl;
-                var dlg = new WhatsNewForm(tag, notes);
-                dlg.ShowDialog(this);
-                if (dlg.WillInstall)
-                    AutoUpdater.DownloadAndInstall(this, downloadUrl);
-                else if (dlg.SkipVersion)
+            UpdateChecker.CheckAsync(this,
+                (tag, pageUrl, downloadUrl, notes) =>
                 {
-                    AppConfig.Current.SkippedUpdateVersion = tag;
-                    AppConfig.Current.Save();
-                }
-            },
-            () =>
-            {
-                _menuCheckUpdate.Enabled = true;
-                MessageBox.Show(AppStrings.UpdateUpToDate, AppStrings.MenuCheckUpdate,
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-            });
+                    _menuCheckUpdate.Enabled = true;
+                    _lastUpdateCheckDate = DateTime.Now.Date;
+
+                    // Reset skipped version so user can re-check manually
+                    if (AppConfig.Current.SkippedUpdateVersion == tag)
+                    {
+                        AppConfig.Current.SkippedUpdateVersion = string.Empty;
+                        AppConfig.Current.Save();
+                    }
+
+                    if (_whatsNewForm != null && !_whatsNewForm.IsDisposed)
+                    {
+                        _whatsNewForm.Close();
+                        _whatsNewForm = null;
+                    }
+
+                    _updateUrl = downloadUrl ?? pageUrl;
+                    using (var dlg = new WhatsNewForm(tag, notes))
+                    {
+                        dlg.ShowDialog(this);
+                        if (dlg.WillInstall)
+                        {
+                            if (notifyIconMain != null && notifyIconMain.Visible)
+                                notifyIconMain.ShowBalloonTip(4000,
+                                    AppStrings.IsVietnamese ? "Đang cập nhật..." : "Updating...",
+                                    AppStrings.UpdateDownloading,
+                                    ToolTipIcon.Info);
+                            AutoUpdater.DownloadAndInstall(this, downloadUrl, pageUrl);
+                        }
+                        else if (dlg.SkipVersion)
+                        {
+                            AppConfig.Current.SkippedUpdateVersion = tag;
+                            AppConfig.Current.Save();
+                        }
+                    }
+                },
+                onUpToDate: () =>
+                {
+                    _menuCheckUpdate.Enabled = true;
+                    _lastUpdateCheckDate = DateTime.Now.Date;
+                    MessageBox.Show(AppStrings.UpdateUpToDate, AppStrings.MenuCheckUpdate,
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                },
+                onError: errMsg =>
+                {
+                    _menuCheckUpdate.Enabled = true;
+                    MessageBox.Show(
+                        (AppStrings.IsVietnamese
+                            ? "Không thể kiểm tra cập nhật. Vui lòng kiểm tra kết nối mạng.\n\nChi tiết: "
+                            : "Could not check for updates. Please check your internet connection.\n\nDetails: ") + errMsg,
+                        AppStrings.MenuCheckUpdate,
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                });
         }
 
         private void OpenFeedbackLink()

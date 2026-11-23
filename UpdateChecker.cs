@@ -10,7 +10,7 @@ namespace frm_vietnamese_calendar
     {
         private const string ApiUrl          = "https://api.github.com/repos/ThanhNguyenVN93/mini-perpetual-calendar/releases/latest";
         private const string ReleasePageBase = "https://github.com/ThanhNguyenVN93/mini-perpetual-calendar/releases/tag/";
-        public  const string CurrentVersion  = "1.0.7";
+        public  const string CurrentVersion  = "1.0.8";
 
         /// <summary>
         /// Checks the GitHub Releases API on a background thread.
@@ -20,16 +20,20 @@ namespace frm_vietnamese_calendar
         // onNewVersion(tag, pageUrl, downloadUrl, releaseNotes)
         public static void CheckAsync(System.Windows.Forms.Control uiControl,
                                       Action<string, string, string, string> onNewVersion,
-                                      Action onUpToDate = null)
+                                      Action onUpToDate = null,
+                                      Action<string> onError = null)
         {
             ThreadPool.QueueUserWorkItem(_ =>
             {
                 try
                 {
+                    try { ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12; } catch { }
+
                     var req = (HttpWebRequest)WebRequest.Create(ApiUrl);
                     req.UserAgent        = "MiniPerpetualCalendar/" + CurrentVersion;
-                    req.Timeout          = 8000;
-                    req.ReadWriteTimeout = 8000;
+                    req.Accept           = "application/vnd.github.v3+json";
+                    req.Timeout          = 10000;
+                    req.ReadWriteTimeout = 10000;
 
                     using (var resp   = (HttpWebResponse)req.GetResponse())
                     using (var stream = resp.GetResponseStream())
@@ -40,21 +44,35 @@ namespace frm_vietnamese_calendar
                         if (tag != null && IsNewer(tag))
                         {
                             string pageUrl     = ReleasePageBase + tag;
-                            string downloadUrl = ParseField(json, "browser_download_url") ?? pageUrl;
+                            string downloadUrl = ParseField(json, "browser_download_url");
                             string notes       = ParseBody(json) ?? string.Empty;
-                            if (uiControl.IsHandleCreated && !uiControl.IsDisposed)
-                                uiControl.BeginInvoke(onNewVersion, tag, pageUrl, downloadUrl, notes);
+                            InvokeOnUi(uiControl, () => onNewVersion(tag, pageUrl, downloadUrl, notes));
                         }
-                        else if (onUpToDate != null && uiControl.IsHandleCreated && !uiControl.IsDisposed)
-                            uiControl.BeginInvoke(onUpToDate);
+                        else if (onUpToDate != null)
+                        {
+                            InvokeOnUi(uiControl, onUpToDate);
+                        }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    if (onUpToDate != null && uiControl.IsHandleCreated && !uiControl.IsDisposed)
-                        uiControl.BeginInvoke(onUpToDate);
+                    if (onError != null)
+                        InvokeOnUi(uiControl, () => onError(ex.Message));
+                    else if (onUpToDate != null)
+                        InvokeOnUi(uiControl, onUpToDate);
                 }
             });
+        }
+
+        private static void InvokeOnUi(System.Windows.Forms.Control uiControl, Action action)
+        {
+            if (uiControl == null || action == null || uiControl.IsDisposed) return;
+            try
+            {
+                if (uiControl.IsHandleCreated)
+                    uiControl.BeginInvoke(action);
+            }
+            catch { }
         }
 
         private static string ParseField(string json, string field)

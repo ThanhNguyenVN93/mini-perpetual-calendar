@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -8,8 +9,8 @@ using System.Windows.Forms;
 namespace frm_vietnamese_calendar
 {
     /// <summary>
-    /// Donation prompt shown to the user every time they exit the app
-    /// (unless they've checked "Don't show this again").
+    /// Donation prompt shown to the user on exit (unless they checked "Don't show this again")
+    /// or opened directly from the right-click context menu.
     /// </summary>
     public partial class DonateForm : Form
     {
@@ -25,20 +26,25 @@ namespace frm_vietnamese_calendar
         private const int WM_NCLBUTTONDOWN = 0xA1;
         private const int HT_CAPTION = 0x2;
 
+        public const string DonateUrl = "https://nguyenthanhdev.com/donate";
+
         protected override void OnHandleCreated(EventArgs e) // L-12: Win11 rounded corners
         {
             base.OnHandleCreated(e);
             try { int p = 2; DwmSetWindowAttribute(Handle, 33, ref p, sizeof(int)); } catch { }
         }
 
-        private static readonly Size CompactSize = new Size(420, 270);
-        private static readonly Size ExpandedSize = new Size(420, 355);
+        private static readonly Size CompactSize  = new Size(460, 320);
+        private static readonly Size ExpandedSize = new Size(460, 464);
+
+        private readonly bool _showDontShowCheckbox;
 
         /// <summary>Whether the user checked "Don't show this again".</summary>
         public bool SkipNextTime { get; private set; }
 
-        public DonateForm()
+        public DonateForm(bool showDontShowCheckbox = true, bool startExpanded = false)
         {
+            _showDontShowCheckbox = showDontShowCheckbox;
             InitializeComponent();
             ClientSize = CompactSize;
 
@@ -49,19 +55,27 @@ namespace frm_vietnamese_calendar
             lblMessage.Text    = AppStrings.DonateMessage;
             lblEncourage.Text  = AppStrings.DonateEncourage;
             lblHint.Text       = AppStrings.DonateHint;
+            lnkWebsite.Text    = AppStrings.DonateWebLink;
             chkDontShow.Text   = AppStrings.DonateDontShow;
             btnYes.Text        = AppStrings.DonateYes;
             btnNo.Text         = AppStrings.DonateNo;
             lblThanks.Text     = AppStrings.DonateThanks;
 
-            pnlTitleBar.MouseDown += TitleBar_MouseDown;
+            chkDontShow.Visible = _showDontShowCheckbox;
+
+            pnlTitleBar.MouseDown  += TitleBar_MouseDown;
             lblTitleText.MouseDown += TitleBar_MouseDown;
-            lblTitleClose.Click += LblTitleClose_Click;
+            lblTitleClose.Click    += LblTitleClose_Click;
+            lblTitleClose.MouseEnter += (s, e) => lblTitleClose.BackColor = Color.FromArgb(220, 50, 50);
+            lblTitleClose.MouseLeave += (s, e) => lblTitleClose.BackColor = Color.Transparent;
 
             KeyDown += DonateForm_KeyDown;
 
             LoadDonationImage(picTcb, "tcb.jpg");
             LoadDonationImage(picMomo, "momo.jpg");
+
+            if (startExpanded)
+                ExpandToQrView();
         }
 
         private void DonateForm_KeyDown(object sender, KeyEventArgs e)
@@ -72,7 +86,6 @@ namespace frm_vietnamese_calendar
             }
         }
 
-        // Drag the dialog by "faking" a title bar drag since the form has no border
         private void TitleBar_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
@@ -87,7 +100,11 @@ namespace frm_vietnamese_calendar
             CloseDialog();
         }
 
-        // Load the QR image embedded in the assembly (so the build produces a single exe file), safely ignoring errors
+        private void lnkWebsite_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            try { Process.Start(DonateUrl); } catch { }
+        }
+
         private void LoadDonationImage(PictureBox target, string fileName)
         {
             try
@@ -106,30 +123,44 @@ namespace frm_vietnamese_calendar
             }
             catch
             {
-                // A missing or broken QR image shouldn't crash the dialog
             }
         }
 
-        // Click "Yes": hide the invite content, show the 2 QR codes to scan for donations
-        // Keep chkDontShow visible so the user can still check it before closing
         private void btnYes_Click(object sender, EventArgs e)
         {
-            lblMessage.Visible = false;
-            lblEncourage.Visible = false;
-            lblHint.Visible = false;
-            btnYes.Visible = false;
-            btnNo.Visible = false;
+            ExpandToQrView();
+        }
 
-            picTcb.Visible = true;
-            picMomo.Visible = true;
-            lblTcb.Visible = true;
-            lblMomo.Visible = true;
+        private void ExpandToQrView()
+        {
+            lblMessage.Visible   = false;
+            lblEncourage.Visible = false;
+            lblHint.Visible      = false;
+            btnYes.Visible       = false;
+
+            pnlQrTcb.Visible  = true;
+            pnlQrMomo.Visible = true;
             lblThanks.Visible = true;
 
-            // Reposition controls so lblThanks and chkDontShow don't overlap (C-02)
-            lblThanks.Location = new System.Drawing.Point(20, 278);
-            chkDontShow.Location = new System.Drawing.Point(110, 316);
-            chkDontShow.BringToFront();
+            // Website link centered below thanks note
+            lnkWebsite.Location  = new Point(22, 378);
+            lnkWebsite.TextAlign = ContentAlignment.MiddleCenter;
+
+            if (_showDontShowCheckbox)
+            {
+                chkDontShow.Location = new Point(24, 416);
+                chkDontShow.Visible  = true;
+                btnNo.Text           = AppStrings.DonateClose;
+                btnNo.Size           = new Size(140, 34);
+                btnNo.Location       = new Point(298, 410);
+            }
+            else
+            {
+                chkDontShow.Visible = false;
+                btnNo.Text          = AppStrings.DonateClose;
+                btnNo.Size          = new Size(160, 34);
+                btnNo.Location      = new Point(150, 410);
+            }
 
             ClientSize = ExpandedSize;
         }

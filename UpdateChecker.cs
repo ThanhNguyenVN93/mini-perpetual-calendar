@@ -10,15 +10,16 @@ namespace frm_vietnamese_calendar
     {
         private const string ApiUrl          = "https://api.github.com/repos/ThanhNguyenVN93/mini-perpetual-calendar/releases/latest";
         private const string ReleasePageBase = "https://github.com/ThanhNguyenVN93/mini-perpetual-calendar/releases/tag/";
-        public  const string CurrentVersion  = "1.0.6";
+        public  const string CurrentVersion  = "1.0.7";
 
         /// <summary>
         /// Checks the GitHub Releases API on a background thread.
         /// onNewVersion(tag, pageUrl, downloadUrl) is called on the UI thread when a newer release exists.
         /// onUpToDate (optional) is called on the UI thread when already on the latest version.
         /// </summary>
+        // onNewVersion(tag, pageUrl, downloadUrl, releaseNotes)
         public static void CheckAsync(System.Windows.Forms.Control uiControl,
-                                      Action<string, string, string> onNewVersion,
+                                      Action<string, string, string, string> onNewVersion,
                                       Action onUpToDate = null)
         {
             ThreadPool.QueueUserWorkItem(_ =>
@@ -40,8 +41,9 @@ namespace frm_vietnamese_calendar
                         {
                             string pageUrl     = ReleasePageBase + tag;
                             string downloadUrl = ParseField(json, "browser_download_url") ?? pageUrl;
+                            string notes       = ParseBody(json) ?? string.Empty;
                             if (uiControl.IsHandleCreated && !uiControl.IsDisposed)
-                                uiControl.BeginInvoke(onNewVersion, tag, pageUrl, downloadUrl);
+                                uiControl.BeginInvoke(onNewVersion, tag, pageUrl, downloadUrl, notes);
                         }
                         else if (onUpToDate != null && uiControl.IsHandleCreated && !uiControl.IsDisposed)
                             uiControl.BeginInvoke(onUpToDate);
@@ -59,6 +61,15 @@ namespace frm_vietnamese_calendar
         {
             var m = Regex.Match(json, "\"" + field + "\"\\s*:\\s*\"([^\"]+)\"");
             return m.Success ? m.Groups[1].Value : null;
+        }
+
+        private static string ParseBody(string json)
+        {
+            var m = Regex.Match(json, "\"body\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+            if (!m.Success) return null;
+            string raw = m.Groups[1].Value;
+            return raw.Replace("\\r\\n", "\n").Replace("\\n", "\n").Replace("\\r", "\n")
+                      .Replace("\\t", "\t").Replace("\\\"", "\"").Replace("\\\\", "\\").Trim();
         }
 
         public static bool IsNewer(string tag)

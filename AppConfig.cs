@@ -42,6 +42,9 @@ namespace frm_vietnamese_calendar
         [DataMember] public bool ShowWeekNumbers { get; set; }
         [DataMember] public bool FullscreenHide { get; set; }
 
+        // Auto-update
+        [DataMember] public string SkippedUpdateVersion { get; set; }
+
         // Reminders (F-04)
         [DataMember] public CalendarEvent[] Reminders { get; set; }
 
@@ -67,6 +70,7 @@ namespace frm_vietnamese_calendar
             ThemeName = "photo";
             ShowWeekNumbers = false;
             FullscreenHide = false;
+            SkippedUpdateVersion = string.Empty;
             Reminders = new CalendarEvent[0];
         }
 

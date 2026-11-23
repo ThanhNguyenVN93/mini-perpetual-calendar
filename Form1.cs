@@ -158,11 +158,7 @@ namespace frm_vietnamese_calendar
             notifyIconMain.Icon        = _originalTrayIcon;
             notifyIconMain.DoubleClick      += NotifyIconMain_DoubleClick;
             notifyIconMain.MouseClick       += NotifyIconMain_MouseClick;
-            notifyIconMain.BalloonTipClicked += (s, e) =>
-            {
-                if (!string.IsNullOrEmpty(_updateUrl))
-                    AutoUpdater.DownloadAndInstall(this, _updateUrl);
-            };
+            notifyIconMain.BalloonTipClicked += (s, e) => { };
 
             // ---- Build context menu ----
             _menuShowHideFont = new Font(SystemFonts.MenuFont ?? SystemFonts.DefaultFont, FontStyle.Bold);
@@ -827,14 +823,22 @@ namespace frm_vietnamese_calendar
         private void CheckForUpdate()
         {
             _lastUpdateCheckDate = DateTime.Now.Date;
-            UpdateChecker.CheckAsync(this, (tag, pageUrl, downloadUrl) =>
+            UpdateChecker.CheckAsync(this, (tag, pageUrl, downloadUrl, notes) =>
             {
+                if (AppConfig.Current.SkippedUpdateVersion == tag) return;
                 _updateUrl = downloadUrl;
-                if (notifyIconMain != null && notifyIconMain.Visible)
-                    notifyIconMain.ShowBalloonTip(8000,
-                        AppStrings.IsVietnamese ? "Có phiên bản mới!" : "Update available!",
-                        "MiniPerpetualCalendar " + tag + " — " + AppStrings.UpdateAvailableAuto,
-                        System.Windows.Forms.ToolTipIcon.Info);
+                var dlg = new WhatsNewForm(tag, notes);
+                dlg.FormClosed += (s2, e2) =>
+                {
+                    if (dlg.WillInstall)
+                        AutoUpdater.DownloadAndInstall(this, downloadUrl);
+                    else if (dlg.SkipVersion)
+                    {
+                        AppConfig.Current.SkippedUpdateVersion = tag;
+                        AppConfig.Current.Save();
+                    }
+                };
+                dlg.Show(this);
             });
         }
 
@@ -1243,23 +1247,22 @@ namespace frm_vietnamese_calendar
         private void ManualCheckForUpdate()
         {
             _menuCheckUpdate.Enabled = false;
-            UpdateChecker.CheckAsync(this, (tag, pageUrl, downloadUrl) =>
+            UpdateChecker.CheckAsync(this, (tag, pageUrl, downloadUrl, notes) =>
             {
                 _menuCheckUpdate.Enabled = true;
-                var result = MessageBox.Show(
-                    AppStrings.UpdateNowPrompt + "\n\n" + tag,
-                    AppStrings.IsVietnamese ? "Có phiên bản mới!" : "Update available",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Information);
-                if (result == DialogResult.Yes)
-                {
-                    notifyIconMain.ShowBalloonTip(5000,
-                        AppStrings.IsVietnamese ? "Đang cập nhật..." : "Updating...",
-                        AppStrings.UpdateDownloading,
-                        System.Windows.Forms.ToolTipIcon.Info);
+                // Reset skipped version so user can re-check manually
+                if (AppConfig.Current.SkippedUpdateVersion == tag)
+                    AppConfig.Current.SkippedUpdateVersion = string.Empty;
+                _updateUrl = downloadUrl;
+                var dlg = new WhatsNewForm(tag, notes);
+                dlg.ShowDialog(this);
+                if (dlg.WillInstall)
                     AutoUpdater.DownloadAndInstall(this, downloadUrl);
+                else if (dlg.SkipVersion)
+                {
+                    AppConfig.Current.SkippedUpdateVersion = tag;
+                    AppConfig.Current.Save();
                 }
-                else
-                    try { System.Diagnostics.Process.Start(pageUrl); } catch { }
             },
             () =>
             {
